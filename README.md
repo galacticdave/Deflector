@@ -23,7 +23,7 @@ Once deflected to **F19**, this key becomes a global hotkey trigger perfect for:
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/YOUR_USERNAME/deflector.git](https://github.com/YOUR_USERNAME/deflector.git)
+    git clone [https://github.com/galacticdave/Deflector.git(https://github.com/galacticdave/Deflector.git)
     cd deflector
     ```
 
