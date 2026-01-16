@@ -1,65 +1,86 @@
-# 🛡️ Deflector
+# Deflector 2.0 🛡️
 
-**Deflect the dedicated macOS Search key to a useful frequency.**
+**Deflector** is a lightweight, sandbox-free macOS menu bar utility that reclaims the `Cmd+Space` and `F4 (Spotlight)` keys, allowing you to seamlessly trigger third-party launchers like **Raycast** or Alfred instead of Apple's Spotlight.
 
-Deflector is a lightweight, native utility for Apple Silicon Macs. It uses macOS's built-in `hidutil` to remap the dedicated **Search / Magnifying Glass** key (Usage Page: Consumer, ID: `0x221`) to **F19**.
+## 🛑 The Problem: Why is this needed?
+Modern MacBooks come with a dedicated **Spotlight Key (F4)**. Unlike standard function keys, macOS "hard-codes" this key at the driver level.
+* **You cannot natively rebind it:** System Settings does not allow you to change the F4 key to launch other apps.
+* **Hardware Lock:** The key sends a special HID usage ID (`0x221`) that macOS consumes before most standard apps can even see it.
+* **The "Ghosting" Glitch:** Even if you disable the native `Cmd+Space` shortcut, third-party launchers often fail to "toggle" closed because they detect you are still holding the Command key down.
 
-This allows you to bind the key to launchers like **Raycast**, **Alfred**, or **BetterTouchTool** while keeping your system clean of heavy third-party drivers.
+## 🚀 The Solution: Deflector 2.0
+Deflector acts as a "man-in-the-middle" between your keyboard and macOS. Version 2.0 introduces a **Hybrid Engine** to bypass these restrictions without crashing:
 
-## 🧠 The Technical "Why"
-**Why do I need a script? Can't I just unbind Spotlight?**
+1.  **Hardware Intercept (F4):** Uses a low-level driver remapping (`hidutil`) to physically convert the restricted F4 signal into a standard `F19` key that Raycast can understand.
+2.  **Software Intercept (Cmd+Space):** Uses Carbon APIs to catch `Cmd+Space` before the system does.
+3.  **Micro-Sequencing:** Solves the "Ghosting" glitch by virtually lifting the Command key 20ms before firing the trigger. This ensures your launcher opens and closes reliably every time.
 
-The dedicated Search key on newer Macs is not a standard keyboard key; it sends a hardware "Consumer Control" signal (`0xC00000221`) that macOS listens for at the kernel level to trigger Spotlight.
+## ✨ Features
+* **Zero Latency:** Native OS integration means Raycast opens instantly.
+* **No Background Daemons:** Runs silently in the menu bar with negligible CPU/RAM footprint.
+* **Shortcuts Support:** Includes a custom URL scheme (`deflector://toggle`) to enable/disable the shield via Apple Shortcuts.
+* **Sandbox Free:** Entirely self-contained architecture eliminates the `(os/kern) failure (0x5)` crashes found in previous versions.
 
-Simply disabling the Spotlight shortcut in System Settings often leaves this key dead or inconsistent. **Deflector** is necessary because it uses `hidutil` to intercept this signal at the registry level and "deflect" it to a standard key code (**F19**) *before* the OS processes it. This effectively shields the input from macOS's default behavior, giving you a clean, usable key.
+## 🛠️ Installation & Setup
 
-## 📦 Installation
+1. **Download:** Get the latest release from the [Releases Page](../../releases).
+2. **Run:** Drag `Deflector.app` to your Applications folder and open it.
+3. **Grant Permissions:** The app requires Accessibility permissions to intercept keystrokes. A window will automatically open to guide you.
+4. **Disable Native Spotlight:**
+   * Go to `System Settings` > `Keyboard` > `Keyboard Shortcuts` > `Spotlight`.
+   * **Uncheck** "Show Spotlight search".
+5. **Configure Raycast (or Alfred):**
+   * Open Raycast Settings (`Cmd + ,`).
+   * Click the "Raycast Hotkey" recorder.
+   * Press `Cmd+Space` (Deflector will intercept this and output `F19`).
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/YOUR_USERNAME/deflector.git](https://github.com/YOUR_USERNAME/deflector.git)
-    cd deflector
-    ```
+---
 
-2.  **Make the script executable:**
-    ```bash
-    chmod +x deflector.sh
-    ```
+## 🏗️ Building from Source (For Non-Developers)
+If you prefer to build the app yourself rather than downloading it, follow these steps. You do **not** need to know how to code.
 
-3.  **Run the Menu:**
-    ```bash
-    ./deflector.sh
-    ```
-    Select option `[1]` to engage the persistent mapping.
+### Prerequisites
+* A Mac running macOS Sonoma or later.
+* **Xcode** (Download for free from the Mac App Store).
+
+### Step 1: Open the Project
+1. Download this repository (Click **Code** > **Download ZIP**) and unzip it.
+2. Double-click `Deflector.xcodeproj` to open it in Xcode.
+
+### Step 2: Sign the App
+To run an app on your Mac, it must be "signed" with your Apple ID.
+1. In Xcode, click the blue **Deflector** icon on the top-left sidebar.
+2. Click **Deflector** under the "Targets" list in the center.
+3. Click the **Signing & Capabilities** tab at the top.
+4. Under the **Team** dropdown, select **"Add an Account..."**.
+5. Enter your Apple ID credentials (this is free; you don't need a paid developer account).
+6. Once added, select your **Personal Team** from the dropdown.
+
+### Step 3: Build & Export
+1. Ensure the destination (top center of the window) is set to **"My Mac"**.
+2. Go to the menu bar: **Product** > **Archive**.
+3. Wait for the build to finish. A window called "Organizer" will pop up.
+4. Click the blue **Distribute App** button on the right.
+5. Select **Custom** (or Copy App) > **Next**.
+6. Select **Copy App** > **Next**.
+7. Choose where to save it (e.g., Desktop) and click **Export**.
+
+You now have a fully functional `Deflector.app` built from source!
 
 ---
 
-## ⚡ Configuration: Choose Your Priority
+## 🧠 Technical Details
+When Deflector is active, pressing `Cmd+Space` triggers a micro-sequence:
+1. Virtually releases the `Command` key.
+2. Waits 20ms (Debounce).
+3. Presses `F19`.
+4. Waits 20ms.
+5. Releases `F19`.
 
-Deflector ensures **BOTH** your physical Search key and the classic `Cmd+Space` shortcut launch your app. However, macOS Shortcuts introduces a slight execution delay (~300ms).
+Simultaneously, the physical `F4` key is remapped at the HID driver level to `F19`.
 
-You must choose which trigger gets "Native Speed" (Instant) and which gets "Emulated Speed" (Slight Delay).
-
-### Mode A: Hardware Priority (Recommended)
-*Choose this if you want the dedicated Search key to be the fastest way to launch.*
-
-| Trigger | Speed | Setup |
-| :--- | :--- | :--- |
-| **Search Key** | **Instant** ⚡ | Set your App (Raycast/Alfred) Hotkey to **F19**. |
-| **Cmd + Space** | **~300ms Delay** | Create a Shortcut bound to `Cmd+Space` that runs `extras/forward_toggle.applescript`. |
-
-### Mode B: Classic Priority
-*Choose this if you rely on Cmd+Space muscle memory and want zero latency there.*
-
-| Trigger | Speed | Setup |
-| :--- | :--- | :--- |
-| **Cmd + Space** | **Instant** ⚡ | Set your App (Raycast/Alfred) Hotkey to **Cmd + Space**. |
-| **Search Key** | **~300ms Delay** | Create a Shortcut bound to **F19** that runs `extras/reverse_toggle.applescript`. |
-
-*Note: Regardless of which mode you choose, ensure the native macOS Spotlight shortcut is disabled in System Settings > Keyboard > Keyboard Shortcuts.*
-
-## License
-MIT License.
-
----
-**Developed by Dave J.** | [davesorbit.com](https://davesorbit.com)
+## 🛑 Uninstallation
+To completely remove the app and restore your keys to Apple's defaults:
+1. Click the Deflector menu bar icon and **Uncheck** "Enable Deflector" (this restores the F4 key).
+2. Quit the app.
+3. Delete `Deflector.app`.
