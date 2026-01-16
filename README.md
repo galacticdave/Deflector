@@ -1,4 +1,4 @@
-# Deflector 2.0 🛡️
+# Deflector 🛡️
 
 **Deflector** is a lightweight, sandbox-free macOS menu bar utility that reclaims the `Cmd+Space` and `F4 (Spotlight)` keys, allowing you to seamlessly trigger third-party launchers like **Raycast** or Alfred instead of Apple's Spotlight.
 
